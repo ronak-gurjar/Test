@@ -22,15 +22,6 @@ public class Employee {
     @ManyToOne
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
-
-    @Override
-    public String toString() {
-        return "Employee{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", salary=" + salary +
-                '}';
-    }
 }
 
 

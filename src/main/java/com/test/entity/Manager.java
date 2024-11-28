@@ -18,10 +18,10 @@ public class Manager extends Employee {
         this.teamName = teamName;
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + ", teamName='" + teamName + '\'';
+    public Manager(String name, double salary, String teamName) {
+        this.setName(name);
+        this.setSalary(salary);
+        this.teamName = teamName;
     }
 }
-
 

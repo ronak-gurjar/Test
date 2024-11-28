@@ -18,11 +18,6 @@ public class Developer extends Employee {
         this.setDepartment(department);
         this.programmingLanguage = programmingLanguage;
     }
-
-    @Override
-    public String toString() {
-        return super.toString() + ", programmingLanguage='" + programmingLanguage + '\'';
-    }
 }
 
 
