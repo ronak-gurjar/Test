@@ -1,6 +1,7 @@
 package com.test.controller;
 
 
+import com.test.dto.AddEmployeeReqDTO;
 import com.test.entity.Employee;
 import com.test.service.EmployeeService;
 import org.springframework.http.ResponseEntity;
@@ -10,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/employees")
-public class EmployeeController {
+public class EmployeeController extends BaseController {
 
     private final EmployeeService<Employee> service;
 
@@ -19,39 +20,39 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<Employee> create(@RequestBody Employee employee) {
-        return ResponseEntity.ok(service.save(employee));
+    public ResponseEntity<?> create(@RequestBody Employee employee) {
+        return okSuccessResponse(service.save(employee), "Employee created successfully");
     }
 
     @GetMapping
-    public ResponseEntity<List<Employee>> getAll() {
-        return ResponseEntity.ok(service.getAll());
+    public ResponseEntity<?> getAll() {
+        return okSuccessResponse(service.getAll(), "Employee fetch successfully");
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getById(@PathVariable Long id) {
+    public ResponseEntity<?> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> update(@PathVariable Long id, @RequestBody Employee employee) {
-        return ResponseEntity.ok(service.update(id, employee));
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Employee employee) {
+        return okSuccessResponse(service.update(id, employee), "Employee updated successfully");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         service.delete(id);
-        return ResponseEntity.noContent().build();
+        return okSuccessResponse("Employee deleted successfully");
     }
 
     @GetMapping("/by-department/{deptId}")
     public ResponseEntity<?> getEmployeesByDepartment(@PathVariable Long deptId) {
-        return ResponseEntity.ok(service.getEmployeesByDepartment(deptId));
+        return okSuccessResponse(service.getEmployeesByDepartment(deptId), "Employee fetch successfully");
     }
 
     @GetMapping("/count-by-department")
     public ResponseEntity<?> getEmployeeCountByDepartment() {
-        return ResponseEntity.ok(service.getEmployeeCountByDepartment());
+        return okSuccessResponse(service.getEmployeeCountByDepartment(), "Employee count by department successfully");
     }
 
 }

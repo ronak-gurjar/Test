@@ -1,22 +1,28 @@
 package com.test.exception.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.test.exception.BusinessValidationException;
+import com.test.exception.ConvertorException;
+import com.test.exception.EndUserException;
 import com.test.service.MessageService;
 import com.test.util.ApiResponse;
 import com.test.util.Constant;
 import jakarta.servlet.http.HttpServletRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -50,50 +56,14 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     private ResponseEntity<Object> buildResponseEntity(HttpStatus badRequest, String errorMessage) {
         LOG.error("apiError " + errorMessage);
-        return new ResponseEntity<>(new com.test.util.ApiResponse<>(objectMapper.createObjectNode(), errorMessage, Constant.FAIL), badRequest);
+        return new ResponseEntity<>(new ApiResponse<>(objectMapper.createObjectNode(), errorMessage, Constant.FAIL), badRequest);
     }
 
     @ExceptionHandler({BusinessValidationException.class})
     protected ResponseEntity<Object> handleBusinessValidation(BusinessValidationException ex, HttpServletRequest request) {
+//        return buildResponseEntity(HttpStatus.OK, getMessage(ex.getMessage(), ex.getParams()));
         LOG.error("apiError " + getMessage(ex.getMessage(), ex.getParams()));
         return new ResponseEntity<>(new ApiResponse<>(null, getMessage(ex.getMessage(), ex.getParams()), Constant.FAIL), HttpStatus.OK);
-    }
-
-
-    @ExceptionHandler({InvalidParameterException.class})
-    protected ResponseEntity<Object> handleInvalidParameter(InvalidParameterException ex, HttpServletRequest request) {
-        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR_MSG);
-    }
-
-
-    @ExceptionHandler(NoSuchElementException.class)
-    protected ResponseEntity<Object> handleNoSuchElementException(NoSuchElementException ex, HttpServletRequest request) {
-        return buildResponseEntity(HttpStatus.NOT_FOUND, messageService.getMessage(ex.getMessage()));
-    }
-
-
-    @ExceptionHandler({DataIntegrityViolationException.class})
-    protected ResponseEntity<Object> handleEndUserException(DataIntegrityViolationException ex, HttpServletRequest request) {
-        return buildResponseEntity(HttpStatus.OK, messageService.getMessage(ex.getMessage()));
-    }
-
-    @ExceptionHandler({SQLException.class})
-    protected ResponseEntity<Object> handleSQLException(SQLException ex, HttpServletRequest request) {
-        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, messageService.getMessage(ex.getMessage()));
-    }
-
-    @ExceptionHandler({ConstraintViolationException.class})
-    protected ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException be, HttpServletRequest request) {
-        for (ConstraintViolation<?> exMessage : be.getConstraintViolations()) {
-            return buildResponseEntity(HttpStatus.OK, messageService.getMessage(exMessage.getMessage()));
-        }
-        return buildResponseEntity(HttpStatus.OK, messageService.getMessage(be.getMessage()));
-    }
-
-    @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        BindingResult result = ex.getBindingResult();
-        return buildResponseEntity(HttpStatus.OK, getMessage(result.getFieldError().getDefaultMessage()));
     }
 
     private String getMessage(String key, Object[] params) {
@@ -104,6 +74,48 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         }
     }
 
+
+
+    @ExceptionHandler({InvalidParameterException.class})
+    protected ResponseEntity<Object> handleInvalidParameter(InvalidParameterException ex, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR_MSG);
+    }
+
+
+
+
+    @ExceptionHandler(NoSuchElementException.class)
+    protected ResponseEntity<Object> handleNoSuchElementException(NoSuchElementException ex, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.NOT_FOUND, messageService.getMessage(ex.getMessage()));
+    }
+
+
+
+
+    @ExceptionHandler({EndUserException.class})
+    protected ResponseEntity<Object> handleEndUserException(EndUserException ex, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, messageService.getMessage(ex.getMessage()));
+    }
+
+    @ExceptionHandler({DataIntegrityViolationException.class})
+    protected ResponseEntity<Object> handleEndUserException(DataIntegrityViolationException ex, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.OK, messageService.getMessage(ex.getMessage()));
+    }
+
+
+
+    @ExceptionHandler({SQLException.class})
+    protected ResponseEntity<Object> handleSQLException(SQLException ex, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, messageService.getMessage(ex.getMessage()));
+    }
+
+
+
+    @ExceptionHandler({ClassCastException.class})
+    protected ResponseEntity<Object> handleClassCastException(ClassCastException ex, HttpServletRequest request) {
+        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, getMessage(ex.getMessage()));
+    }
+
     private String getMessage(String key) {
         try {
             return messageService.getMessage(key);
@@ -111,4 +123,35 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
             return key;
         }
     }
+
+
+
+
+
+
+
+    @ExceptionHandler({javax.validation.ConstraintViolationException.class})
+    protected ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException be, HttpServletRequest request) {
+        for (ConstraintViolation<?> exMessage : be.getConstraintViolations()) {
+            return buildResponseEntity(HttpStatus.OK, messageService.getMessage(exMessage.getMessage()));
+        }
+        return buildResponseEntity(HttpStatus.OK, messageService.getMessage(be.getMessage()));
+    }
+
+    @ExceptionHandler({Exception.class})
+    protected ResponseEntity<Object> handleException(Exception ex, HttpServletRequest request) {
+        LOG.error("---------------------Internal server Error------------------------");
+        if (ex.getCause() instanceof ConvertorException) {
+            return buildResponseEntity(HttpStatus.OK, messageService.getMessage(((ConversionFailedException) ex).getRootCause().getMessage()));
+        }
+        ex.printStackTrace();
+        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR_MSG);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        BindingResult result = ex.getBindingResult();
+        return buildResponseEntity(HttpStatus.OK, getMessage(result.getFieldError().getDefaultMessage()));
+    }
+
 }

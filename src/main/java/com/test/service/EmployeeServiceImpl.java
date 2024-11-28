@@ -1,18 +1,19 @@
 package com.test.service;
 
 import com.test.entity.Employee;
+import com.test.exception.BusinessValidationException;
 import com.test.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService<Employee> {
 
     private final EmployeeRepository repository;
-
 
     public EmployeeServiceImpl(EmployeeRepository repository) {
         this.repository = repository;
@@ -30,7 +31,11 @@ public class EmployeeServiceImpl implements EmployeeService<Employee> {
 
     @Override
     public Employee getById(Long id) {
-        return repository.findById(id).orElseThrow(() -> new RuntimeException("Employee not found"));
+        Optional<Employee> byId = repository.findById(id);
+        if (byId.isEmpty()) {
+            throw new BusinessValidationException("Employee not found");
+        }
+        return byId.get();
     }
 
     @Override
